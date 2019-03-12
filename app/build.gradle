@@ -1,6 +1,14 @@
 apply plugin: 'com.android.application'
 
 android {
+    signingConfigs {
+        config {
+            keyAlias 'xxxx'
+            keyPassword 'xxx'
+            storeFile file('xxx.jks')
+            storePassword 'xxxx'
+        }
+    }
     compileSdkVersion 26
     defaultConfig {
         applicationId "click.dummer.spotifine"
@@ -8,10 +16,11 @@ android {
         targetSdkVersion 22
         versionCode 1
         versionName "0.1"
+        signingConfig signingConfigs.config
     }
-
     buildTypes {
         release {
+            signingConfig signingConfigs.config
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             applicationVariants.all { variant ->
@@ -24,9 +33,9 @@ android {
 }
 
 dependencies {
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation project(':spotify-app-remote')
-    implementation "com.google.code.gson:gson:2.8.5"
+    implementation 'com.google.code.gson:gson:2.8.5'
     implementation 'com.android.support:appcompat-v7:26.1.0'
     implementation 'com.android.support.constraint:constraint-layout:1.1.3'
 }
