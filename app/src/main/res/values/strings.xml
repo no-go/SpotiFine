@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">Spoti-Fine</string>
+    <string name="add">add now playing track</string>
+    <string name="dorandom">do random play</string>
+    <string name="pause">pause</string>
+    <string name="upit">+ up</string>
+    <string name="downit">- down</string>
+    <string name="remove">remove</string>
+    <string name="play">play</string>
+</resources>
