@@ -9,10 +9,12 @@ import android.content.CursorLoader;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.Cursor;
+import android.net.Uri;
 import android.support.v4.content.WakefulBroadcastReceiver;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatDelegate;
+import android.util.Log;
 import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -33,6 +35,7 @@ import java.util.Calendar;
 
 public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
     final String SOME_ACTION = "click.dummer.spotifine.MainActivity.AlarmReceiver";
+    final String PROJECT_LINK = "https://github.com/no-go/SpotiFine";
     final double MOD_UP = 1.2;
     final double MOD_DOWN = 0.8;
     final double MOD_FLOOR = 10.0;
@@ -44,8 +47,9 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     private ListView entryList;
     private EntryCursorAdapter entryCursorAdapter;
 
-    private PendingIntent pendingIntent;
     private AlarmManager alarmManager;
+    private AlarmReceiver alarmReceiver = null;
+    private PendingIntent pendingIntent;
 
     public class Entry {
         public String title;
@@ -65,8 +69,12 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
+            case R.id.action_project:
+                Intent intentProj = new Intent(Intent.ACTION_VIEW, Uri.parse(PROJECT_LINK));
+                startActivity(intentProj);
+                break;
             case R.id.action_random:
-                nextPress();
+                nextPress(getApplicationContext());
                 break;
             case R.id.action_add:
                 readIt();
@@ -134,12 +142,13 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             );
             return true;
         } else if (j == R.id.action_play) {
-            AlarmReceiver ar = new AlarmReceiver();
+            if (alarmReceiver != null) unregisterReceiver(alarmReceiver);
+            alarmReceiver = new AlarmReceiver();
             IntentFilter intentFilter = new IntentFilter(SOME_ACTION);
-            registerReceiver(ar, intentFilter);
+            registerReceiver(alarmReceiver, intentFilter);
 
             Intent myIntent = new Intent(SOME_ACTION);
-            PendingIntent pendingIntent = PendingIntent.getBroadcast(MainActivity.this, 0, myIntent, 0);
+            pendingIntent = PendingIntent.getBroadcast(MainActivity.this, 0, myIntent, 0);
             long dur = cursor.getLong(cursor.getColumnIndexOrThrow(EntryContract.DbEntry.COLUMN_Duration));
             alarmManager.setExact(
                     AlarmManager.RTC_WAKEUP,
@@ -185,13 +194,14 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     }
 
     public void pausePress() {
-        if (pendingIntent != null) alarmManager.cancel(pendingIntent);
+        if (alarmReceiver != null) {
+            unregisterReceiver(alarmReceiver);
+            alarmReceiver =null;
+        }
         mSpotifyAppRemote.getPlayerApi().pause();
     }
 
-    public void nextPress() {
-        if (pendingIntent != null) alarmManager.cancel(pendingIntent);
-
+    public void nextPress(Context context) {
         Cursor c = getContentResolver().query(
                 EntryContentProvider.CONTENT_URI,
                 EntryContract.projection,
@@ -213,19 +223,21 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         }
         int id = (int) (Math.random() * magicList.size());
 
-        AlarmReceiver ar = new AlarmReceiver();
+        if (alarmReceiver != null) unregisterReceiver(alarmReceiver);
+        alarmReceiver = new AlarmReceiver();
         IntentFilter intentFilter = new IntentFilter(SOME_ACTION);
-        registerReceiver(ar, intentFilter);
+        registerReceiver(alarmReceiver, intentFilter);
 
         Intent myIntent = new Intent(SOME_ACTION);
-        pendingIntent = PendingIntent.getBroadcast(MainActivity.this, 0, myIntent, 0);
+        pendingIntent = PendingIntent.getBroadcast(context, 0, myIntent, 0);
 
         alarmManager.setExact(
                 AlarmManager.RTC_WAKEUP,
                 System.currentTimeMillis() + magicList.get(id).duration,
                 pendingIntent
         );
-        Toast.makeText(MainActivity.this, magicList.get(id).title, Toast.LENGTH_LONG).show();
+        //Log.d("xxxxxxxxxxxx", String.valueOf(magicList.get(id).duration));
+        Toast.makeText(context, magicList.get(id).title, Toast.LENGTH_LONG).show();
         playPress(magicList.get(id).url);
     }
 
@@ -338,7 +350,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     public class AlarmReceiver extends WakefulBroadcastReceiver {
         @Override
         public void onReceive(final Context context, Intent intent) {
-            nextPress();
+            nextPress(context);
         }
     }
 

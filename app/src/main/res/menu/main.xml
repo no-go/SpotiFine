@@ -18,5 +18,7 @@
         android:title="@string/pause"
         app:showAsAction="never" />
 
-
+    <item
+        android:id="@+id/action_project"
+        android:title="@string/projPage" />
 </menu>
